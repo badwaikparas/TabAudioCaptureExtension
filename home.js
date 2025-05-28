@@ -1,3 +1,8 @@
+let recorder = null;
+let chunks = [];
+let stream = null;
+let isRecording = false;
+
 function saveToFile(blob, name) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -10,29 +15,48 @@ function saveToFile(blob, name) {
     a.remove();
 }
 
-function captureTabAudio() {
-    chrome.tabCapture.capture({ audio: true, video: false }, (stream) => {
+function startRecordingTabAudio(button) {
+    chrome.tabCapture.capture({ audio: true, video: false }, (capturedStream) => {
+        stream = capturedStream;
 
-        // these lines enable the audio to continue playing while capturing
-        context = new AudioContext();
-        var newStream = context.createMediaStreamSource(stream);
-        newStream.connect(context.destination);
+        const context = new AudioContext();
+        const newStream = context.createMediaStreamSource(stream);
+        newStream.connect(context.destination); // Allow audio playback
 
-        const recorder = new MediaRecorder(stream);
-        const chunks = [];
+        recorder = new MediaRecorder(stream);
+        chunks = [];
+
         recorder.ondataavailable = (e) => {
             chunks.push(e.data);
         };
-        recorder.onstop = (e) => saveToFile(new Blob(chunks), "test.wav");
+
+        recorder.onstop = () => {
+            saveToFile(new Blob(chunks), "test.wav");
+            stream.getTracks().forEach(track => track.stop()); // Stop capturing tab
+            stream = null;
+            button.textContent = "Start Recording";
+            isRecording = false;
+        };
+
         recorder.start();
-        setTimeout(() => recorder.stop(), 5000);
-    })
+        isRecording = true;
+        button.textContent = "Stop Recording";
+    });
 }
 
-
+function stopRecording() {
+    if (recorder && isRecording) {
+        recorder.stop();
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById("share-audio-button").addEventListener("click", function () {
-        captureTabAudio();
-    })
+    const button = document.getElementById("share-audio-button");
+    button.addEventListener("click", function () {
+        if (!isRecording) {
+            startRecordingTabAudio(button);
+        } else {
+            stopRecording();
+        }
+    });
 });
