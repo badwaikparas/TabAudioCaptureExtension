@@ -1,0 +1,4 @@
+node_modules
+package-lock.json
+frontend/public/vite.svg
+.env

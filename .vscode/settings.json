@@ -1,0 +1,11 @@
+{
+    "files.exclude": {
+        "**/node_modules": true,
+        "extension": true,
+        "**/package-lock.json": true,
+        "**/index.html": true,
+        "**/README.md": true,
+        "**/public": true,
+        "**/vite.config.js": true
+    }
+}
